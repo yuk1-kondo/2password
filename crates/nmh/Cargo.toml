@@ -1,0 +1,10 @@
+[package]
+name = "twopassword-nmh"
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "2pw-nmh"
+path = "src/main.rs"
+
+[dependencies]

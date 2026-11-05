@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "2Password",
+  "version": "0.1.0",
+  "description": "Fill logins from your 2Password vault",
+  "permissions": ["activeTab", "nativeMessaging", "storage"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "2Password" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": { "48": "icon48.png" }
+}

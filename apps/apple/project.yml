@@ -1,0 +1,43 @@
+name: TwoPassword
+options:
+  bundleIdPrefix: dev.twopassword
+  createIntermediateGroups: true
+targets:
+  TwoPassword-macOS:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Shared
+      - path: Bindings/twopassword_ffi.swift
+    dependencies:
+      - framework: Frameworks/twopasswordFFI.xcframework
+        link: true
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.twopassword.macos
+        PRODUCT_NAME: 2Password
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        SWIFT_VERSION: "5.9"
+  TwoPassword-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Shared
+      - path: Bindings/twopassword_ffi.swift
+    dependencies:
+      - framework: Frameworks/twopasswordFFI.xcframework
+        link: true
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.twopassword.ios
+        PRODUCT_NAME: 2Password
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.9"
