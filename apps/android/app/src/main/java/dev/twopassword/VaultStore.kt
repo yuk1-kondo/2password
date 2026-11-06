@@ -67,6 +67,11 @@ class VaultStore(ctx: Context) {
         reload()
     }
 
+    suspend fun updateItem(uuid: String, item: NewItem) = withContext(Dispatchers.IO) {
+        vault?.updateItem(uuid, item)
+        reload()
+    }
+
     suspend fun removeItem(uuid: String) = withContext(Dispatchers.IO) {
         vault?.removeItem(uuid)
         reload()

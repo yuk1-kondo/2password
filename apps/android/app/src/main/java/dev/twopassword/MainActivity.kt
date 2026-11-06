@@ -20,13 +20,35 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val store = VaultStore(applicationContext)
+        val clipboard = ClipboardHelper(applicationContext)
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when (store.state) {
                         VaultState.SETUP -> SetupScreen(store)
                         VaultState.LOCKED -> UnlockScreen(store)
-                        VaultState.UNLOCKED -> VaultScreen(store)
+                        VaultState.UNLOCKED -> {
+                            var selected by remember { mutableStateOf<String?>(null) }
+                            var editing by remember { mutableStateOf<String?>(null) }
+                            var adding by remember { mutableStateOf(false) }
+                            when {
+                                adding || editing != null -> ItemEditScreen(
+                                    store,
+                                    if (adding) null else editing,
+                                    onDone = { adding = false; editing = null },
+                                )
+                                selected != null -> ItemDetailScreen(
+                                    store, selected!!, clipboard,
+                                    onBack = { selected = null },
+                                    onEdit = { editing = selected },
+                                )
+                                else -> VaultScreen(
+                                    store,
+                                    onSelect = { selected = it },
+                                    onAdd = { adding = true },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -111,36 +133,5 @@ fun UnlockScreen(store: VaultStore) {
                 catch (e: Exception) { error = "アンロックに失敗しました" }
             }
         }) { Text("アンロック") }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun VaultScreen(store: VaultStore) {
-    var refreshTick by remember { mutableIntStateOf(0) }
-    val items = store.items
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("2Password (${items.size})") },
-                actions = {
-                    TextButton(onClick = { store.lock() }) { Text("ロック") }
-                },
-            )
-        },
-    ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            items(items, key = { it.uuid }) { item ->
-                ListItem(
-                    headlineContent = { Text(item.title) },
-                    supportingContent = { Text(item.username ?: item.url ?: "") },
-                    trailingContent = {
-                        if (item.favorite) Text("★") else {}
-                    },
-                )
-                HorizontalDivider()
-            }
-        }
     }
 }
