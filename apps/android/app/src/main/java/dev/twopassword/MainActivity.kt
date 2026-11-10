@@ -1,7 +1,7 @@
 package dev.twopassword
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,17 +16,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val store = VaultStore(applicationContext)
         val clipboard = ClipboardHelper(applicationContext)
+        val activity = this
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when (store.state) {
                         VaultState.SETUP -> SetupScreen(store)
-                        VaultState.LOCKED -> UnlockScreen(store)
+                        VaultState.LOCKED -> UnlockScreen(store, activity)
                         VaultState.UNLOCKED -> {
                             var selected by remember { mutableStateOf<String?>(null) }
                             var editing by remember { mutableStateOf<String?>(null) }
@@ -107,10 +108,33 @@ fun SetupScreen(store: VaultStore) {
 }
 
 @Composable
-fun UnlockScreen(store: VaultStore) {
+fun UnlockScreen(store: VaultStore, activity: FragmentActivity) {
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val biometricReady = remember { BiometricGate.available(activity) }
+
+    fun unlockWithPassword() {
+        scope.launch {
+            try {
+                store.unlock(password)
+                // Offer biometric enrollment on first password unlock (spec §8.2).
+                if (biometricReady && !store.hasBiometricEnrollment()) {
+                    BiometricGate.prompt(
+                        activity,
+                        store.aukEncryptCipher(),
+                        "生体認証を有効化",
+                        onCipher = { cipher ->
+                            scope.launch { store.enrollAuk(password, cipher) }
+                        },
+                        onError = {},
+                    )
+                }
+            } catch (e: Exception) {
+                error = "アンロックに失敗しました"
+            }
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -127,11 +151,27 @@ fun UnlockScreen(store: VaultStore) {
         )
         if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = {
-            scope.launch {
-                try { store.unlock(password) }
-                catch (e: Exception) { error = "アンロックに失敗しました" }
-            }
-        }) { Text("アンロック") }
+        Button(onClick = { unlockWithPassword() }) { Text("アンロック") }
+        if (biometricReady && store.hasBiometricEnrollment()) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(onClick = {
+                try {
+                    BiometricGate.prompt(
+                        activity,
+                        store.aukDecryptCipher(),
+                        "生体認証でアンロック",
+                        onCipher = { cipher ->
+                            scope.launch {
+                                try { store.unlockWithBiometric(cipher) }
+                                catch (e: Exception) { error = "生体認証アンロックに失敗しました" }
+                            }
+                        },
+                        onError = { msg -> error = msg },
+                    )
+                } catch (e: Exception) {
+                    error = "生体認証キーを初期化できませんでした"
+                }
+            }) { Text("生体認証でアンロック") }
+        }
     }
 }

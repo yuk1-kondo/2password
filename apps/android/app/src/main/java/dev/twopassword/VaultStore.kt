@@ -7,18 +7,20 @@ import androidx.compose.runtime.setValue
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import javax.crypto.Cipher
 import uniffi.twopassword_ffi.*
 
 enum class VaultState { SETUP, LOCKED, UNLOCKED }
 
 /**
  * App state holding the unlocked Vault. Android counterpart of the Swift
- * VaultStore — Secret Key is stored in app-private storage for now
- * (Keystore+BiometricPrompt upgrade is a spec §8.2 follow-up).
+ * VaultStore — Secret Key is encrypted with an Android Keystore AES-GCM key
+ * (spec §8.2); the biometric path wraps the AUK behind a user-auth key.
  */
 class VaultStore(ctx: Context) {
     private val vaultDir = File(ctx.filesDir, "vault").absolutePath
     private val keyFile = File(ctx.filesDir, "device.key")
+    private val aukFile = File(ctx.filesDir, "auk.bin")
 
     var state by mutableStateOf(VaultState.SETUP)
         private set
@@ -33,10 +35,30 @@ class VaultStore(ctx: Context) {
         ) VaultState.LOCKED else VaultState.SETUP
     }
 
+    /** Keystore-encrypted Secret Key; migrates legacy plaintext on first read. */
+    private fun loadSk(): String {
+        val raw = keyFile.readBytes()
+        return runCatching {
+            String(KeystoreHelper.decrypt(KeystoreHelper.skKey(), raw))
+        }.getOrElse {
+            // Legacy plaintext device.key — re-encrypt under Keystore now.
+            val sk = String(raw)
+            runCatching {
+                val blob = KeystoreHelper.encrypt(
+                    KeystoreHelper.encryptCipher(KeystoreHelper.skKey()),
+                    sk.toByteArray(),
+                )
+                keyFile.writeBytes(blob)
+            }
+            sk
+        }
+    }
+
     /** Generate + persist the Secret Key first, then create the vault (atomic order). */
     suspend fun setup(password: String): String = withContext(Dispatchers.IO) {
         val sk = newSecretKey()
-        keyFile.writeText(sk)
+        val blob = KeystoreHelper.encrypt(KeystoreHelper.encryptCipher(KeystoreHelper.skKey()), sk.toByteArray())
+        keyFile.writeBytes(blob)
         createVault(vaultDir, "user", password, sk)
         vault = unlockVault(vaultDir, password, sk)
         state = VaultState.UNLOCKED
@@ -45,8 +67,33 @@ class VaultStore(ctx: Context) {
     }
 
     suspend fun unlock(password: String) = withContext(Dispatchers.IO) {
-        val sk = keyFile.readText()
-        vault = unlockVault(vaultDir, password, sk)
+        vault = unlockVault(vaultDir, password, loadSk())
+        state = VaultState.UNLOCKED
+        reload()
+    }
+
+    /** Encrypt cipher for the biometric-bound AUK key — needs a BiometricPrompt gate. */
+    fun aukEncryptCipher(): Cipher =
+        KeystoreHelper.encryptCipher(KeystoreHelper.aukKey())
+
+    /** Whether a biometric-wrapped AUK exists. */
+    fun hasBiometricEnrollment(): Boolean = aukFile.exists()
+
+    /** Decrypt cipher for the stored AUK blob (iv is prepended). */
+    fun aukDecryptCipher(): Cipher =
+        KeystoreHelper.decryptCipher(KeystoreHelper.aukKey(), aukFile.readBytes())
+
+    /** Wrap + store the freshly-derived AUK inside the biometric cipher. */
+    suspend fun enrollAuk(password: String, cipher: Cipher) = withContext(Dispatchers.IO) {
+        val auk = deriveAukB64(vaultDir, password, loadSk())
+        aukFile.writeBytes(KeystoreHelper.encrypt(cipher, auk.toByteArray()))
+    }
+
+    /** Biometric unlock: cipher already auth'd by BiometricPrompt. */
+    suspend fun unlockWithBiometric(cipher: Cipher) = withContext(Dispatchers.IO) {
+        val blob = aukFile.readBytes()
+        val aukB64 = String(cipher.doFinal(blob.copyOfRange(12, blob.size)))
+        vault = unlockVaultWithAuk(vaultDir, aukB64)
         state = VaultState.UNLOCKED
         reload()
     }
