@@ -1,4 +1,8 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
+import CoreImage.CIFilterBuiltins
 
 /// Printable emergency kit: account id + Secret Key + recovery instructions
 /// (spec §7). The only way back in if all devices are lost.
@@ -25,6 +29,16 @@ struct EmergencyKitView: View {
                                 .font(.system(.body, design: .monospaced))
                                 .textSelection(.enabled)
                         }
+                        if let secretKey, let qr = qrImage(secretKey) {
+                            HStack {
+                                Spacer()
+                                qr
+                                    .resizable()
+                                    .interpolation(.none)
+                                    .frame(width: 140, height: 140)
+                                Spacer()
+                            }
+                        }
                     }
                     .padding(8)
                 }
@@ -45,6 +59,18 @@ struct EmergencyKitView: View {
             .navigationTitle("エマージェンシーキット")
         }
         .task { await load() }
+    }
+
+    /// QR of the Secret Key for new-device enrollment (spec §7 scan side).
+    private func qrImage(_ contents: String) -> Image? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(contents.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage,
+              let cg = context.createCGImage(output, from: output.extent)
+        else { return nil }
+        return Image(decorative: cg, scale: 1)
     }
 
     private func load() async {

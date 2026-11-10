@@ -34,16 +34,25 @@ struct SecurityInfoView: View {
         ("機能", [
             .init(name: "パスワード / PIN / パスフレーズ生成", done: true),
             .init(name: "TOTP ワンタイムコード", done: true),
+            .init(name: "漏洩チェック（HIBP k-anonymity）", done: true),
             .init(name: "お気に入り", done: true),
             .init(name: "検索", done: true),
+            .init(name: "CSV インポート / エクスポート", done: true),
+            .init(name: "パスワード変更", done: true),
+            .init(name: "エマージェンシーキット", done: true),
+        ]),
+        ("他プラットフォーム", [
+            .init(name: "ブラウザ拡張（native messaging基盤）", done: true),
+            .init(name: "iOS クライアント", done: true),
+            .init(name: "Android クライアント", done: true),
+            .init(name: "Windows クライアント（C API準備済み）", done: true),
         ]),
         ("未実装", [
-            .init(name: "ブラウザ拡張・オートフィル", done: false),
+            .init(name: "ブラウザ拡張のリリース版動作", done: false),
+            .init(name: "モバイルオートフィル（iOS/Android provider）", done: false),
             .init(name: "パスキー", done: false),
-            .init(name: "漏洩チェック（HIBP）", done: false),
-            .init(name: "インポート / エクスポート", done: false),
-            .init(name: "パスワード変更・Emergency Kit", done: false),
-            .init(name: "iOS / Android / Windows クライアント", done: false),
+            .init(name: "QR新端末登録（スキャン側）", done: false),
+            .init(name: "第三者セキュリティ監査", done: false),
         ]),
     ]
 
