@@ -18,6 +18,11 @@ enum class VaultState { SETUP, LOCKED, UNLOCKED }
  * (spec §8.2); the biometric path wraps the AUK behind a user-auth key.
  */
 class VaultStore(ctx: Context) {
+    /** Process-wide current store — lets the AutofillService share the
+     *  unlocked Vault with the Activity (same process, spec §8.3). */
+    companion object {
+        var current: VaultStore? = null
+    }
     private val vaultDir = File(ctx.filesDir, "vault").absolutePath
     private val keyFile = File(ctx.filesDir, "device.key")
     private val aukFile = File(ctx.filesDir, "auk.bin")
@@ -33,6 +38,7 @@ class VaultStore(ctx: Context) {
         state = if (File(vaultDir, "profile.json").exists()
             && File(vaultDir, "keyset.json").exists()
         ) VaultState.LOCKED else VaultState.SETUP
+        current = this
     }
 
     /** Keystore-encrypted Secret Key; migrates legacy plaintext on first read. */
