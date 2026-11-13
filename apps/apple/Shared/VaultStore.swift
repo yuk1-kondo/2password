@@ -165,6 +165,24 @@ final class VaultStore {
     }
 
     /// Argon2id stretch runs off the main actor (spec §3.2, ~1s on target).
+    /// Restore path for a device that lost its Secret Key (spec §7 —
+    /// Emergency Kit entry point). Only persists the key after a
+    /// successful unlock so a typo can't poison the Keychain.
+    nonisolated func unlockWithSecretKey(password: String, secretKey: String) async throws {
+        let path = await MainActor.run { vaultDir.path }
+        let unlocked = try await Task.detached(priority: .userInitiated) {
+            try unlockVault(dir: path, password: password, secretKey: secretKey)
+        }.value
+        try KeychainHelper.save(secretKey)
+        let auk = try? await Task.detached(priority: .userInitiated) {
+            try deriveAukB64(dir: path, password: password, secretKey: secretKey)
+        }.value
+        if let auk {
+            try? BiometricStore.save(auk)
+        }
+        await finishUnlock(unlocked)
+    }
+
     nonisolated func unlock(password: String) async throws {
         let secretKey = try KeychainHelper.load()
         let path = await MainActor.run { vaultDir.path }

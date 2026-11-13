@@ -54,20 +54,42 @@ class VaultStore(ctx: Context) {
         }
     }
 
-    /** Generate + persist the Secret Key first, then create the vault (atomic order). */
+    private var pendingVault: Vault? = null
+
+    /** Generate + persist the Secret Key first, then create the vault (atomic order).
+     *  State stays SETUP so the SK can be shown until begin() is called. */
     suspend fun setup(password: String): String = withContext(Dispatchers.IO) {
         val sk = newSecretKey()
         val blob = KeystoreHelper.encrypt(KeystoreHelper.encryptCipher(KeystoreHelper.skKey()), sk.toByteArray())
         keyFile.writeBytes(blob)
         createVault(vaultDir, "user", password, sk)
-        vault = unlockVault(vaultDir, password, sk)
+        pendingVault = unlockVault(vaultDir, password, sk)
+        sk
+    }
+
+    /** Finish setup after the user has seen the Secret Key. */
+    fun begin() {
+        vault = pendingVault
+        pendingVault = null
         state = VaultState.UNLOCKED
         reload()
-        sk
     }
 
     suspend fun unlock(password: String) = withContext(Dispatchers.IO) {
         vault = unlockVault(vaultDir, password, loadSk())
+        state = VaultState.UNLOCKED
+        reload()
+    }
+
+    /** Emergency-kit restore: validate before persisting the key (spec §7). */
+    suspend fun unlockWithSecretKey(password: String, secretKey: String) = withContext(Dispatchers.IO) {
+        val v = unlockVault(vaultDir, password, secretKey) // throws on bad key
+        val blob = KeystoreHelper.encrypt(
+            KeystoreHelper.encryptCipher(KeystoreHelper.skKey()),
+            secretKey.toByteArray(),
+        )
+        keyFile.writeBytes(blob)
+        vault = v
         state = VaultState.UNLOCKED
         reload()
     }

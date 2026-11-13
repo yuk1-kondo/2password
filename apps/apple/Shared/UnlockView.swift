@@ -7,6 +7,7 @@ struct UnlockView: View {
     @State private var errorMessage: String?
     @State private var busy = false
     @State private var attemptedBiometrics = false
+    @State private var manualSecretKey = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -38,6 +39,19 @@ struct UnlockView: View {
                 }
                 .disabled(busy)
             }
+
+            DisclosureGroup("Secret Keyを手入力して復元") {
+                VStack(spacing: 8) {
+                    TextField("P1-...", text: $manualSecretKey)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.caption, design: .monospaced))
+                    Button("このSecret Keyで復元", action: unlockWithManualKey)
+                        .disabled(manualSecretKey.isEmpty || password.isEmpty || busy)
+                }
+            }
+            .frame(maxWidth: 320)
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding(32)
         .task {
@@ -59,6 +73,24 @@ struct UnlockView: View {
                 errorMessage = "Secret Keyが見つかりません。別端末からの移行時は再登録が必要です"
             } catch {
                 errorMessage = "パスワードまたはSecret Keyが違います"
+            }
+            store.noteUnlockFailure()
+            busy = false
+        }
+    }
+
+    /// Emergency-kit restore: type the Secret Key by hand when the device
+    /// lost it (spec §7). Keychain is only written after a successful unlock.
+    private func unlockWithManualKey() {
+        busy = true
+        errorMessage = nil
+        Task {
+            do {
+                try await store.unlockWithSecretKey(
+                    password: password, secretKey: manualSecretKey
+                )
+            } catch {
+                errorMessage = "Secret Keyまたはパスワードが違います"
             }
             store.noteUnlockFailure()
             busy = false

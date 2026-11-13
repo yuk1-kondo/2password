@@ -75,7 +75,7 @@ fun SetupScreen(store: VaultStore) {
             Text("Secret Key（安全な場所に保存してください）")
             Text(secretKey!!, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
-            Button(onClick = { store.state; }) { Text("はじめる") }
+            Button(onClick = { store.begin() }) { Text("はじめる") }
             return@Column
         }
         OutlinedTextField(
@@ -172,6 +172,30 @@ fun UnlockScreen(store: VaultStore, activity: FragmentActivity) {
                     error = "生体認証キーを初期化できませんでした"
                 }
             }) { Text("生体認証でアンロック") }
+        }
+        Spacer(Modifier.height(16.dp))
+        var showSk by remember { mutableStateOf(false) }
+        var manualSk by remember { mutableStateOf("") }
+        TextButton(onClick = { showSk = !showSk }) {
+            Text("Secret Keyを手入力して復元")
+        }
+        if (showSk) {
+            OutlinedTextField(
+                value = manualSk, onValueChange = { manualSk = it },
+                label = { Text("P1-…") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(
+                enabled = manualSk.isNotEmpty() && password.isNotEmpty(),
+                onClick = {
+                    scope.launch {
+                        try { store.unlockWithSecretKey(password, manualSk) }
+                        catch (e: Exception) { error = "Secret Keyまたはパスワードが違います" }
+                    }
+                },
+            ) { Text("このSecret Keyで復元") }
         }
     }
 }
