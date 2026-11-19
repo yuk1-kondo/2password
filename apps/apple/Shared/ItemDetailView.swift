@@ -19,7 +19,7 @@ struct ItemDetailView: View {
                         header(item)
                         fields(item)
                     }
-                    .padding(24)
+                    .padding(36)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
@@ -43,7 +43,11 @@ struct ItemDetailView: View {
                 Button("削除", role: .destructive) { confirmDelete = true }
             }
         }
-        .task { await load() }
+        .task(id: uuid) {
+            item = nil
+            showPassword = false
+            await load()
+        }
         .sheet(isPresented: $editing, onDismiss: { Task { await load() } }) {
             ItemEditView(uuid: uuid)
         }
@@ -59,18 +63,23 @@ struct ItemDetailView: View {
     }
 
     private func header(_ item: ItemDetail) -> some View {
-        HStack(spacing: 14) {
-            ItemIcon(title: item.title, size: 48)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title).font(.title2).bold()
-                if item.favorite {
-                    Label("お気に入り", systemImage: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.yellow)
+        VStack(alignment: .leading, spacing: 20) {
+            VaultEyebrow(text: "02 / ITEM DETAILS")
+            HStack(spacing: 18) {
+                ItemIcon(title: item.title, size: 48)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(.system(size: 32, weight: .medium)).tracking(-1)
+                    if item.favorite {
+                        Label("お気に入り", systemImage: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            Divider()
         }
-        .padding(.bottom, 20)
+        .padding(.bottom, 24)
     }
 
     @ViewBuilder
@@ -131,7 +140,7 @@ private struct CopyRow: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(label)
-                    .font(.caption)
+                    .font(VaultDesign.caption(11))
                     .foregroundStyle(.secondary)
                 Text(value)
                     .font(.body)
@@ -146,7 +155,7 @@ private struct CopyRow: View {
             .buttonStyle(.borderless)
             .help("コピー")
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 18)
         .overlay(alignment: .bottom) {
             Divider()
         }
@@ -162,7 +171,7 @@ private struct BreachRow: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("漏洩チェック")
-                    .font(.caption)
+                    .font(VaultDesign.caption(11))
                     .foregroundStyle(.secondary)
                 switch result {
                 case .none:
@@ -180,7 +189,7 @@ private struct BreachRow: View {
             }
             Spacer()
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 18)
         .overlay(alignment: .bottom) { Divider() }
         .task {
             let pw = password
@@ -201,7 +210,7 @@ private struct PasswordRow: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("パスワード")
-                    .font(.caption)
+                    .font(VaultDesign.caption(11))
                     .foregroundStyle(.secondary)
                 Text(revealed ? value : String(repeating: "•", count: 12))
                     .font(.system(.body, design: .monospaced))
@@ -223,7 +232,7 @@ private struct PasswordRow: View {
             .buttonStyle(.borderless)
             .help("コピー")
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 18)
         .overlay(alignment: .bottom) {
             Divider()
         }
@@ -250,7 +259,7 @@ private struct TotpRow: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("ワンタイムパスワード")
-                    .font(.caption)
+                    .font(VaultDesign.caption(11))
                     .foregroundStyle(.secondary)
                 Text(code)
                     .font(.system(.body, design: .monospaced))
@@ -273,7 +282,7 @@ private struct TotpRow: View {
             .buttonStyle(.borderless)
             .help("コピー")
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 18)
         .overlay(alignment: .bottom) {
             Divider()
         }

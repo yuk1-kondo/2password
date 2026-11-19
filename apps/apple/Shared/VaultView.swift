@@ -69,7 +69,7 @@ struct VaultView: View {
         HStack(spacing: 12) {
             ItemIcon(title: item.title)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
+                Text(item.title).font(.system(size: 14, weight: .medium))
                 Text(item.username ?? item.url ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -79,10 +79,10 @@ struct VaultView: View {
             if item.favorite {
                 Image(systemName: "star.fill")
                     .font(.caption)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
     }
 
     var body: some View {
@@ -94,8 +94,7 @@ struct VaultView: View {
                         categoryRow(cat).tag(cat)
                     }
                 } header: {
-                    Text("2Password")
-                        .font(.headline)
+                    VaultWordmark().padding(.vertical, 16)
                 }
 
                 Section {
@@ -108,7 +107,7 @@ struct VaultView: View {
                 }
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 220)
             #else
             List {
                 Section {
@@ -122,8 +121,7 @@ struct VaultView: View {
                         }
                     }
                 } header: {
-                    Text("2Password")
-                        .font(.headline)
+                    VaultWordmark().padding(.vertical, 16)
                 }
 
                 Section {
@@ -140,18 +138,25 @@ struct VaultView: View {
         } content: {
             #if os(macOS)
             List(selection: $selection) {
+                Section {
                 ForEach(filtered, id: \.uuid) { item in
                     itemRow(item).tag(item.uuid)
                 }
+                } header: { collectionHeader }
             }
-            .navigationSplitViewColumnWidth(min: 240, ideal: 280)
+            .listStyle(.plain)
+            .navigationSplitViewColumnWidth(min: 270, ideal: 320)
             .searchable(text: $query, placement: .sidebar, prompt: "検索")
             .toolbar { vaultToolbar }
             #else
             List {
+                Section {
                 ForEach(filtered, id: \.uuid) { item in
-                    Button { selection = item.uuid } label: { itemRow(item) }
+                    NavigationLink {
+                        ItemDetailView(uuid: item.uuid, selection: $selection)
+                    } label: { itemRow(item) }
                 }
+                } header: { collectionHeader }
             }
             .searchable(text: $query, prompt: "検索")
             .toolbar { vaultToolbar }
@@ -160,9 +165,19 @@ struct VaultView: View {
             if let selection {
                 ItemDetailView(uuid: selection, selection: $selection)
             } else {
-                ContentUnavailableView("アイテム未選択", systemImage: "lock")
+                VStack(alignment: .leading, spacing: 24) {
+                    VaultEyebrow(text: "YOUR PRIVATE COLLECTION")
+                    VaultSpectrum().frame(maxWidth: 460).frame(height: 300)
+                    Text("大切なものを、ひとつずつ。")
+                        .font(.system(size: 26, weight: .medium)).tracking(-0.8)
+                    Text("左の一覧からアイテムを選ぶか、＋で追加してください。")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                .padding(32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .navigationTitle("保管庫")
         .sheet(isPresented: $showingAdd) { ItemEditView(uuid: nil) }
         .sheet(isPresented: $showingGenerator) { GeneratorView() }
         .sheet(isPresented: $showingInfo) { SecurityInfoView() }
@@ -191,6 +206,20 @@ struct VaultView: View {
         } message: {
             Text(ioMessage ?? "")
         }
+    }
+
+    private var collectionHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VaultEyebrow(text: "01 / COLLECTION")
+            HStack(alignment: .firstTextBaseline) {
+                Text(category.title).font(.system(size: 25, weight: .medium)).tracking(-0.8)
+                Spacer()
+                Text(String(format: "%02d", filtered.count)).font(VaultDesign.caption(12))
+            }
+        }
+        .foregroundStyle(.primary)
+        .textCase(nil)
+        .padding(.vertical, 20)
     }
 
     private func runExport() {

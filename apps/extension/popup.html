@@ -1,9 +1,21 @@
 <!doctype html>
-<html>
-<body style="font:13px sans-serif;min-width:220px;padding:12px">
-  <strong>2Password</strong>
-  <p id="status">このページのログインを検索中…</p>
-  <ul id="items"></ul>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>2Password — 保管庫</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header><strong>2Password<sup>®</sup></strong><span>PERSONAL VAULT</span></header>
+  <main>
+    <div class="spectrum" aria-hidden="true"></div>
+    <p class="eyebrow">01 / BROWSER ACCESS</p>
+    <h1>このページの鍵。</h1>
+    <p id="status" role="status">ログインを検索しています…</p>
+    <ul id="items"></ul>
+  </main>
+  <footer>あなただけの、大切なもの。<span>↗</span></footer>
   <script src="popup.js"></script>
 </body>
 </html>

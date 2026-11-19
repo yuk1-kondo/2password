@@ -14,45 +14,35 @@ struct SetupView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VaultAccessLayout(
+            index: "00 / CREATE",
+            title: secretKey == nil ? "自分だけの保管庫。" : "鍵を、安全な場所へ。",
+            subtitle: "パスワードも、大切な記録も。\nあなたの手元で守ります。"
+        ) {
             if let secretKey {
                 secretKeyView(secretKey)
             } else {
                 formView
             }
         }
-        .padding(32)
-        .frame(maxWidth: 460)
     }
 
     private var formView: some View {
-        VStack(spacing: 16) {
-            Text("2Password")
-                .font(.largeTitle).bold()
-            Text("Vaultを作成します。アカウントパスワードは復元できません。")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            TextField("アカウントID（例: メールアドレス）", text: $userId)
-                .textFieldStyle(.roundedBorder)
-
-            VStack(alignment: .leading, spacing: 4) {
-                SecureField("アカウントパスワード（8文字以上）", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                SecureField("パスワード（確認）", text: $confirm)
-                    .textFieldStyle(.roundedBorder)
-                hintText
-            }
-
+        VStack(alignment: .leading, spacing: 16) {
+            Text("アカウントパスワードは復元できません。忘れないものを設定してください。")
+                .font(.callout).foregroundStyle(.secondary)
+            TextField("アカウントID（メールアドレスなど）", text: $userId)
+                .modifier(VaultFieldStyle())
+            SecureField("パスワード（8文字以上）", text: $password)
+                .modifier(VaultFieldStyle())
+            SecureField("パスワードを確認", text: $confirm)
+                .modifier(VaultFieldStyle())
+            hintText
             if let errorMessage {
-                Text(errorMessage)
-                    .font(.callout)
-                    .foregroundStyle(.red)
+                Text(errorMessage).font(.callout).foregroundStyle(.red)
             }
-
-            Button("Vaultを作成", action: create)
-                .buttonStyle(.borderedProminent)
+            Button("保管庫を作成 ↗", action: create)
+                .buttonStyle(InkButtonStyle())
                 .disabled(!formValid)
         }
     }
@@ -102,7 +92,7 @@ struct SetupView: View {
             HStack {
                 Button("コピー") { Clipboard.copy(key) }
                 Button("続ける") { /* state already .unlocked */ }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(InkButtonStyle())
             }
         }
     }

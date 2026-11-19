@@ -33,7 +33,7 @@ docs/           security-spec.md — 脅威モデルと暗号仕様（実装の�
 cargo build && cargo test    # コア（32テスト）
 ./scripts/build-apple.sh     # Rust→XCFramework→Swiftバインディング（macOS+iOS両対応）
 ./scripts/build-android.sh   # Rust→.so→Kotlinバインディング→APK
-./scripts/install-native-host.sh  # 拡張用NMホスト登録（Chrome/Firefox/Edge）
+./scripts/install-native-host.sh <拡張ID> # chrome://extensionsに表示されたIDで登録
 ```
 
 ## 設計上の注意

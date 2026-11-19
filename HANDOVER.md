@@ -18,7 +18,7 @@ cargo test -p twopassword-core          # 32テスト
 ./scripts/build-apple.sh                # Rust→XCFramework→Swiftバインディング
 cd apps/apple && xcodegen && xcodebuild -scheme TwoPassword-macOS build
 ./scripts/build-android.sh              # Rust→.so→Kotlinバインディング→APK(エミュレータ向けx86_64含む)
-./scripts/install-native-host.sh        # Chrome/Firefox/EdgeにNMホスト登録
+./scripts/install-native-host.sh <拡張ID> # Chromeで拡張を読み込み、表示されたIDで登録
 ```
 
 生成物（gitignore済み、再生成で復元）: `apps/android-bindings/`、`apps/apple/Bindings/`、`apps/apple/Frameworks/twopasswordFFI.xcframework/`、`apps/apple/TwoPassword.xcodeproj/`、各`build/`。
@@ -39,6 +39,8 @@ cd apps/apple && xcodegen && xcodebuild -scheme TwoPassword-macOS build
 暗号コア/生成器/TOTP/HIBP(k-anonymity)/CSVインポート・エクスポート/パスワード変更(キーセット再wrap)/エマージェンシーキット+QR/自動ロック/クリップボード90秒消去/Touch ID/Keystore+BiometricPrompt/AutofillService/ネイティブメッセージング/全OSクライアント骨格
 
 ## 残タスク（優先度順）
+
+2026-11-14: Chrome登録の不正なワイルドカードと欠落アイコン参照を修正。隔離HOMEでの登録テスト2件成功。実環境のホスト登録は未実施。手順は `apps/extension/README.md`。実ブラウザE2Eは引き続き未完了。
 
 1. **ブラウザ拡張E2E** — `install-native-host.sh`実行済みか要確認→Chromeの`chrome://extensions`で`apps/extension`を読み込み→github.com等でログインフォームフィル確認。アプリがアンロック状態であること（ユーザー操作必須）。chooser UIの複数一致動作も要検証
 2. **iOS AutoFill拡張** — App Groupエンタイトルメント必須（Apple開発者アカウント）。Extension targetを`apps/apple`に追加、shared containerでVault参照
@@ -69,3 +71,11 @@ cd apps/apple && xcodegen && xcodebuild -scheme TwoPassword-macOS build
 - `docs/security-spec.md` — 暗号仕様の唯一の基準
 - `~/agent-config/lessons/2password-crossplatform.md` — ビルド系ハマりどころの記録
 - `~/agent-config/plans/2password_multiplatform.plan.md` — 全体計画
+
+## UIリデザイン (2026-11-14)
+
+- Nuevo.Tokyoを参照した白黒・等幅ラベル・余白・和色グラデーションの共通UIを追加。
+- 適用: macOS/iOSのセットアップ・ロック解除・一覧・詳細・モノグラム、および拡張ポップアップ。
+- `docs/design-language.md` に方針・実装範囲・検証結果を記載。
+- macOS/iOS Simulatorの署名なしビルド成功。Mac解除後にロック解除画面・空の保管庫・追加フォーム表示とキャンセルを確認。0件のためデータのある一覧・詳細は未確認。
+- Android/Windowsは未適用。ブラウザE2Eの未完了状態は変わらない。

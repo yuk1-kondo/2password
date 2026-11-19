@@ -9,6 +9,9 @@ struct TwoPasswordApp: App {
         WindowGroup {
             ContentView()
                 .environment(store)
+#if os(macOS)
+                .frame(minWidth: 900, minHeight: 620)
+#endif
 #if os(iOS)
                 .onChange(of: scenePhase) { _, phase in
                     // Leaving the app locks the vault (spec §8.2).
