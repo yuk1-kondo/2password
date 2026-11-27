@@ -18,7 +18,8 @@ for t in "${TARGETS[@]}"; do
 done
 
 ABIS=(arm64-v8a x86_64)
-for i in "${!TARGETS[@]}"; do
+# zsh arrays are 1-indexed; "${!ARR[@]}" is bash-only.
+for i in {1..${#TARGETS[@]}}; do
   echo "== cargo build --release --target ${TARGETS[$i]}"
   cargo build --release -p twopassword-ffi --target "${TARGETS[$i]}"
   mkdir -p "apps/android/app/src/main/jniLibs/${ABIS[$i]}"
