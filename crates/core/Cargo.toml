@@ -2,6 +2,7 @@
 name = "twopassword-core"
 description = "Shared cryptographic and vault core for 2Password clients"
 edition.workspace = true
+version.workspace = true
 license.workspace = true
 
 [dependencies]

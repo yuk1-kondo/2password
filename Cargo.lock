@@ -1123,7 +1123,7 @@ dependencies = [
 
 [[package]]
 name = "twopassword-cli"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1136,7 +1136,7 @@ dependencies = [
 
 [[package]]
 name = "twopassword-core"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "argon2",
  "chacha20poly1305",
@@ -1158,7 +1158,7 @@ dependencies = [
 
 [[package]]
 name = "twopassword-ffi"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "data-encoding",
  "serde_json",
@@ -1170,7 +1170,7 @@ dependencies = [
 
 [[package]]
 name = "twopassword-nmh"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "typenum"
